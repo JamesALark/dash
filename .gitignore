@@ -54,3 +54,4 @@ backend/src/generated/
 # Temporary files
 *.tmp
 *.temp
+.env*.local

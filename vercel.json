@@ -15,12 +15,20 @@
     {
       "src": "backend/api/cron/refresh-news.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "backend/api/migrate.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/cron/refresh-news",
       "dest": "backend/api/cron/refresh-news.ts"
+    },
+    {
+      "src": "/api/migrate",
+      "dest": "backend/api/migrate.ts"
     },
     {
       "src": "/api/(.*)",
