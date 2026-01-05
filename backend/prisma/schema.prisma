@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("todo") // todo, in-progress, done
+  priority    String?  @default("medium") // low, medium, high
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Recommendation {
+  id          String   @id @default(uuid())
+  type        String   // to read, to watch
+  title       String
+  description String?
+  url         String?
+  status      String   @default("pending") // pending, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NewsSource {
+  id        String      @id @default(uuid())
+  name      String
+  url       String?
+  type      String      // rss, newsapi
+  enabled   Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  newsItems NewsItem[]
+}
+
+model NewsItem {
+  id          String     @id @default(uuid())
+  sourceId    String
+  source      NewsSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  url         String?
+  publishedAt DateTime?
+  read        Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+}
