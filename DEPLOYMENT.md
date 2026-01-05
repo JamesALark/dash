@@ -185,25 +185,39 @@ Create a one-time migration script that runs on deployment:
 
 ## Cron Jobs Configuration
 
-The app includes a cron job that refreshes news every hour. This is configured in `vercel.json`:
+The app includes a cron job that refreshes news daily. This is configured in `vercel.json`:
 
 ```json
 "crons": [
   {
     "path": "/api/cron/refresh-news",
-    "schedule": "0 * * * *"
+    "schedule": "0 0 * * *"
   }
 ]
 ```
 
-**Important**: 
-- Vercel Cron is available on Pro plans and above
-- For Hobby (free) plan, you can use external cron services:
-  - [EasyCron](https://www.easycron.com/)
-  - [Cron-job.org](https://cron-job.org/)
-  - [GitHub Actions](https://github.com/features/actions)
-  
-  Set up an external cron to call: `https://your-app.vercel.app/api/cron/refresh-news` with the `CRON_SECRET` in the Authorization header.
+**Vercel Plan Limitations**: 
+- **Hobby (Free) Plan**: Supports daily cron jobs only (runs once per day at midnight UTC)
+- **Pro Plan and Above**: Supports more frequent schedules (hourly, every 15 minutes, etc.)
+
+**For More Frequent Updates on Hobby Plan**:
+
+If you need news to refresh more often than daily, you can use external cron services:
+
+1. **EasyCron** (https://www.easycron.com/)
+   - Free tier available
+   - Set up to call: `https://your-app.vercel.app/api/cron/refresh-news`
+   - Add header: `Authorization: Bearer YOUR_CRON_SECRET`
+
+2. **Cron-job.org** (https://cron-job.org/)
+   - Free tier available
+   - Configure HTTP request with Authorization header
+
+3. **GitHub Actions** (https://github.com/features/actions)
+   - Free for public repos
+   - Create a workflow that calls your endpoint on a schedule
+
+**Manual Refresh**: Users can also manually refresh news by clicking the "Refresh News" button in the app, which calls `/api/news/refresh` directly.
 
 ## Troubleshooting
 
