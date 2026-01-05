@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { FeedRefreshProvider } from '../contexts/FeedRefreshContext';
 import TaskManager from './TaskManager';
 import NewsFeed from './NewsFeed';
 import Recommendations from './Recommendations';
@@ -12,7 +13,8 @@ export default function Dashboard() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
+    <FeedRefreshProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-lg">
         <div className="p-6">
@@ -86,5 +88,6 @@ export default function Dashboard() {
         {activeTab === 'feed' && <Feed />}
       </div>
     </div>
+    </FeedRefreshProvider>
   );
 }

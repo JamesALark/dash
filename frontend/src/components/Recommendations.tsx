@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { recommendationsApi } from '../services/api';
+import { useFeedRefresh } from '../contexts/FeedRefreshContext';
 
 interface Recommendation {
   id: string;
@@ -24,6 +25,7 @@ export default function Recommendations() {
     status: 'pending',
   });
   const [filter, setFilter] = useState<string>('all');
+  const { refreshFeed } = useFeedRefresh();
 
   useEffect(() => {
     loadRecommendations();
@@ -52,6 +54,7 @@ export default function Recommendations() {
       setEditingRec(null);
       setFormData({ type: 'to watch', title: '', description: '', url: '', status: 'pending' });
       loadRecommendations();
+      refreshFeed();
     } catch (error) {
       console.error('Failed to save recommendation:', error);
     }
@@ -74,6 +77,7 @@ export default function Recommendations() {
       try {
         await recommendationsApi.delete(id);
         loadRecommendations();
+        refreshFeed();
       } catch (error) {
         console.error('Failed to delete recommendation:', error);
       }
@@ -86,6 +90,7 @@ export default function Recommendations() {
         status: rec.status === 'completed' ? 'pending' : 'completed',
       });
       loadRecommendations();
+      refreshFeed();
     } catch (error) {
       console.error('Failed to update recommendation:', error);
     }

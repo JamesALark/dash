@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { feedApi, tasksApi, recommendationsApi, newsApi } from '../services/api';
+import { useFeedRefresh } from '../contexts/FeedRefreshContext';
 
 interface FeedItem {
   id: string;
@@ -22,12 +23,9 @@ interface FeedItem {
 export default function Feed() {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { registerRefreshCallback } = useFeedRefresh();
 
-  useEffect(() => {
-    loadFeed();
-  }, []);
-
-  const loadFeed = async () => {
+  const loadFeed = useCallback(async () => {
     try {
       const response = await feedApi.getAll();
       setFeedItems(response.data);
@@ -36,7 +34,15 @@ export default function Feed() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadFeed();
+  }, [loadFeed]);
+
+  useEffect(() => {
+    registerRefreshCallback(loadFeed);
+  }, [registerRefreshCallback, loadFeed]);
 
   const handleTaskUpdate = async (id: string, status: string) => {
     try {
