@@ -1,4 +1,5 @@
-import { createContext, useContext, useRef, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useRef, useCallback } from 'react';
+import type { ReactNode } from 'react';
 
 interface FeedRefreshContextType {
   refreshFeed: () => void;
