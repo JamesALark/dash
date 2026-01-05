@@ -1,7 +1,5 @@
-import { PrismaClient } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
 import { parseRSSFeed } from './rssParser';
-
-const prisma = new PrismaClient();
 
 export async function fetchNewsFromSources() {
   const sources = await prisma.newsSource.findMany({

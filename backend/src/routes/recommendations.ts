@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET all recommendations
 router.get('/', async (req, res) => {
@@ -18,7 +17,11 @@ router.get('/', async (req, res) => {
     });
     res.json(recommendations);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch recommendations' });
+    console.error('Failed to fetch recommendations:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch recommendations',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -33,7 +36,11 @@ router.get('/:id', async (req, res) => {
     }
     res.json(recommendation);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch recommendation' });
+    console.error('Failed to fetch recommendation:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch recommendation',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -52,7 +59,11 @@ router.post('/', async (req, res) => {
     });
     res.status(201).json(recommendation);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create recommendation' });
+    console.error('Failed to create recommendation:', error);
+    res.status(500).json({ 
+      error: 'Failed to create recommendation',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -72,7 +83,11 @@ router.put('/:id', async (req, res) => {
     });
     res.json(recommendation);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update recommendation' });
+    console.error('Failed to update recommendation:', error);
+    res.status(500).json({ 
+      error: 'Failed to update recommendation',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -84,7 +99,11 @@ router.delete('/:id', async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete recommendation' });
+    console.error('Failed to delete recommendation:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete recommendation',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 

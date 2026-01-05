@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { feedApi, tasksApi, recommendationsApi, newsApi } from '../services/api';
 import { useFeedRefresh } from '../contexts/FeedRefreshContext';
 
@@ -23,6 +23,8 @@ interface FeedItem {
 export default function Feed() {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const { registerRefreshCallback } = useFeedRefresh();
 
   const loadFeed = useCallback(async () => {
@@ -43,6 +45,26 @@ export default function Feed() {
   useEffect(() => {
     registerRefreshCallback(loadFeed);
   }, [registerRefreshCallback, loadFeed]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openDropdownId) {
+        const dropdownElement = dropdownRefs.current.get(openDropdownId);
+        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+          setOpenDropdownId(null);
+        }
+      }
+    };
+
+    if (openDropdownId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId]);
 
   const handleTaskUpdate = async (id: string, status: string) => {
     try {
@@ -110,6 +132,22 @@ export default function Feed() {
     }
   };
 
+  const getRecTypeIcon = (recType?: string) => {
+    switch (recType) {
+      case 'to read': return '📖';
+      case 'to watch': return '🎬';
+      default: return '⭐';
+    }
+  };
+
+  const getRecTypeColor = (recType?: string) => {
+    switch (recType) {
+      case 'to read': return 'bg-indigo-500/20 text-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300';
+      case 'to watch': return 'bg-orange-500/20 text-orange-300 dark:bg-orange-500/20 dark:text-orange-300';
+      default: return 'bg-gray-500/20 text-gray-300 dark:bg-gray-500/20 dark:text-gray-300';
+    }
+  };
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -147,6 +185,16 @@ export default function Feed() {
     }
   };
 
+  const formatStatus = (status?: string) => {
+    if (!status) return 'Todo';
+    return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const getAvailableStatuses = (currentStatus?: string) => {
+    const allStatuses = ['todo', 'in-progress', 'done'];
+    return allStatuses.filter(status => status !== currentStatus);
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-gray-500 dark:text-slate-400">Loading feed...</div>;
   }
@@ -165,12 +213,25 @@ export default function Feed() {
 
       {/* Feed Items */}
       <div className="grid gap-4">
-        {feedItems.length === 0 ? (
-          <div className="text-center py-12 text-gray-500 dark:text-slate-500">
-            No feed items found. Create some tasks, recommendations, or add news sources!
-          </div>
-        ) : (
-          feedItems.map((item) => (
+        {(() => {
+          const filteredItems = feedItems.filter((item) => {
+            // Hide done tasks
+            if (item.type === 'task' && item.metadata.status === 'done') {
+              return false;
+            }
+            // Hide completed recommendations
+            if (item.type === 'recommendation' && item.metadata.recStatus === 'completed') {
+              return false;
+            }
+            return true;
+          });
+
+          return filteredItems.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 dark:text-slate-500">
+              No feed items found. Create some tasks, recommendations, or add news sources!
+            </div>
+          ) : (
+            filteredItems.map((item) => (
             <div
               key={`${item.type}-${item.id}`}
               className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 ${
@@ -209,9 +270,6 @@ export default function Feed() {
                   <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400 mb-2">
                     {item.type === 'task' && (
                       <>
-                        <span className={`px-2 py-1 rounded ${getStatusColor(item.metadata.status)}`}>
-                          {item.metadata.status?.replace('-', ' ') || 'todo'}
-                        </span>
                         {item.metadata.priority && (
                           <span className={getPriorityColor(item.metadata.priority)}>
                             Priority: {item.metadata.priority}
@@ -230,8 +288,9 @@ export default function Feed() {
                           {item.metadata.recStatus || 'pending'}
                         </span>
                         {item.metadata.recType && (
-                          <span className="text-gray-500 dark:text-slate-400">
-                            {item.metadata.recType}
+                          <span className={`px-2 py-1 rounded text-xs flex items-center gap-1.5 ${getRecTypeColor(item.metadata.recType)}`}>
+                            <span className="text-sm">{getRecTypeIcon(item.metadata.recType)}</span>
+                            <span>{item.metadata.recType}</span>
                           </span>
                         )}
                       </>
@@ -239,7 +298,10 @@ export default function Feed() {
                     {item.type === 'news' && (
                       <>
                         {item.metadata.sourceName && (
-                          <span>{item.metadata.sourceName}</span>
+                          <span className="px-2 py-1 rounded text-xs flex items-center gap-1.5 bg-slate-500/20 text-slate-300 dark:bg-slate-500/20 dark:text-slate-300">
+                            <span className="text-sm">📰</span>
+                            <span>{item.metadata.sourceName}</span>
+                          </span>
                         )}
                       </>
                     )}
@@ -260,24 +322,40 @@ export default function Feed() {
                 </div>
                 <div className="flex flex-col space-y-2 ml-4">
                   {item.type === 'task' && (
-                    <>
-                      {item.metadata.status !== 'done' && (
-                        <button
-                          onClick={() => handleTaskUpdate(item.id, 'done')}
-                          className="bg-green-500/20 dark:bg-green-500/20 text-green-700 dark:text-green-300 hover:bg-green-500/30 dark:hover:bg-green-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200"
-                        >
-                          Mark Done
-                        </button>
+                    <div 
+                      className="relative" 
+                      ref={(el) => {
+                        const itemId = `${item.type}-${item.id}`;
+                        if (el) {
+                          dropdownRefs.current.set(itemId, el);
+                        } else {
+                          dropdownRefs.current.delete(itemId);
+                        }
+                      }}
+                    >
+                      <button
+                        onClick={() => setOpenDropdownId(openDropdownId === `${item.type}-${item.id}` ? null : `${item.type}-${item.id}`)}
+                        className={`px-2 py-1 rounded text-sm transition-all duration-200 cursor-pointer ${getStatusColor(item.metadata.status)} hover:opacity-80`}
+                      >
+                        {formatStatus(item.metadata.status)}
+                      </button>
+                      {openDropdownId === `${item.type}-${item.id}` && (
+                        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+                          {getAvailableStatuses(item.metadata.status).map((status) => (
+                            <button
+                              key={status}
+                              onClick={() => {
+                                handleTaskUpdate(item.id, status);
+                                setOpenDropdownId(null);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-sm transition-colors duration-200 first:rounded-t-lg last:rounded-b-lg hover:opacity-80 ${getStatusColor(status)}`}
+                            >
+                              {formatStatus(status)}
+                            </button>
+                          ))}
+                        </div>
                       )}
-                      {item.metadata.status === 'done' && (
-                        <button
-                          onClick={() => handleTaskUpdate(item.id, 'todo')}
-                          className="bg-yellow-500/20 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-500/30 dark:hover:bg-yellow-500/30 px-3 py-1 rounded-lg text-sm transition-all duration-200"
-                        >
-                          Mark Todo
-                        </button>
-                      )}
-                    </>
+                    </div>
                   )}
                   {item.type === 'recommendation' && (
                     <button
@@ -306,8 +384,9 @@ export default function Feed() {
                 </div>
               </div>
             </div>
-          ))
-        )}
+            ))
+          );
+        })()}
       </div>
     </div>
   );

@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
 import { fetchNewsFromSources, fetchNewsFromNewsAPI } from '../services/newsService';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET all news items
 router.get('/', async (req, res) => {
@@ -20,7 +19,11 @@ router.get('/', async (req, res) => {
     });
     res.json(newsItems);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch news items' });
+    console.error('Failed to fetch news items:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch news items',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -30,7 +33,11 @@ router.post('/refresh', async (req, res) => {
     await fetchNewsFromSources();
     res.json({ message: 'News refreshed successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to refresh news' });
+    console.error('Failed to refresh news:', error);
+    res.status(500).json({ 
+      error: 'Failed to refresh news',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -41,7 +48,11 @@ router.post('/newsapi', async (req, res) => {
     const articles = await fetchNewsFromNewsAPI(query);
     res.json(articles);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch from News API' });
+    console.error('Failed to fetch from News API:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch from News API',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -53,7 +64,11 @@ router.get('/sources', async (req, res) => {
     });
     res.json(sources);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch news sources' });
+    console.error('Failed to fetch news sources:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch news sources',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -71,7 +86,11 @@ router.post('/sources', async (req, res) => {
     });
     res.status(201).json(source);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create news source' });
+    console.error('Failed to create news source:', error);
+    res.status(500).json({ 
+      error: 'Failed to create news source',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -83,7 +102,11 @@ router.delete('/sources/:id', async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete news source' });
+    console.error('Failed to delete news source:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete news source',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -97,7 +120,11 @@ router.put('/:id/read', async (req, res) => {
     });
     res.json(newsItem);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update news item' });
+    console.error('Failed to update news item:', error);
+    res.status(500).json({ 
+      error: 'Failed to update news item',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -113,7 +140,11 @@ router.get('/:id', async (req, res) => {
     }
     res.json(newsItem);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch news item' });
+    console.error('Failed to fetch news item:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch news item',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 

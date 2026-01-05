@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET all tasks
 router.get('/', async (req, res) => {
@@ -12,7 +11,11 @@ router.get('/', async (req, res) => {
     });
     res.json(tasks);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    console.error('Failed to fetch tasks:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch tasks',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -27,7 +30,11 @@ router.get('/:id', async (req, res) => {
     }
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch task' });
+    console.error('Failed to fetch task:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch task',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -46,7 +53,11 @@ router.post('/', async (req, res) => {
     });
     res.status(201).json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create task' });
+    console.error('Failed to create task:', error);
+    res.status(500).json({ 
+      error: 'Failed to create task',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -66,7 +77,11 @@ router.put('/:id', async (req, res) => {
     });
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update task' });
+    console.error('Failed to update task:', error);
+    res.status(500).json({ 
+      error: 'Failed to update task',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 
@@ -78,7 +93,11 @@ router.delete('/:id', async (req, res) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete task' });
+    console.error('Failed to delete task:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete task',
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+    });
   }
 });
 

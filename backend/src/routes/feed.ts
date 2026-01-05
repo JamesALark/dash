@@ -1,8 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 interface FeedItem {
   id: string;

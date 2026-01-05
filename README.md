@@ -12,7 +12,7 @@ A comprehensive web-based dashboard for managing tasks, news, and recommendation
 
 - **Frontend**: React 18 + Vite + TypeScript + Tailwind CSS
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: SQLite with Prisma ORM
+- **Database**: PostgreSQL with Prisma ORM
 - **News**: RSS parser + News API integration
 
 ## Getting Started
@@ -21,6 +21,10 @@ A comprehensive web-based dashboard for managing tasks, news, and recommendation
 
 - Node.js (v20+ recommended)
 - npm or yarn
+- PostgreSQL (v12+ recommended)
+  - **macOS**: `brew install postgresql@14` then `brew services start postgresql@14`
+  - **Linux**: `sudo apt-get install postgresql postgresql-contrib` (Ubuntu/Debian)
+  - **Windows**: Download from [PostgreSQL website](https://www.postgresql.org/download/windows/)
 
 ### Installation
 
@@ -41,18 +45,52 @@ npm install
 
 ### Configuration
 
-1. Copy `.env.example` to `.env` in the backend directory:
+1. Set up PostgreSQL database:
 ```bash
-cd backend
-cp .env.example .env
+# Create a new database (replace 'your_database_name' with your preferred name)
+createdb your_database_name
+
+# Or using psql:
+psql postgres
+CREATE DATABASE your_database_name;
+\q
 ```
 
-2. (Optional) Add your News API key to `backend/.env`:
-   - Get a free API key from [News API](https://newsapi.org/)
-
-3. Copy `.env.example` to `.env` in the frontend directory:
+2. Create `.env` file in the backend directory:
 ```bash
-cd frontend
+cd backend
+touch .env
+```
+
+3. Add the following to `backend/.env`:
+```env
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/your_database_name
+# Replace username, password, and your_database_name with your PostgreSQL credentials
+
+# Server Configuration
+PORT=3001
+
+# Optional: News API Key
+# Get a free API key from https://newsapi.org/
+NEWS_API_KEY=your_news_api_key_here
+
+# Optional: Cron Secret (for production)
+CRON_SECRET=your_random_secret_token_here
+
+# Environment
+NODE_ENV=development
+```
+
+4. Run database migrations:
+```bash
+cd backend
+npx prisma migrate dev
+```
+
+5. (Optional) Copy `.env.example` to `.env` in the frontend directory:
+```bash
+cd ../frontend
 cp .env.example .env
 ```
 
