@@ -1,22 +1,47 @@
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { FeedRefreshProvider } from '../contexts/FeedRefreshContext';
+import { FeedRefreshProvider, useFeedRefresh } from '../contexts/FeedRefreshContext';
 import TaskManager from './TaskManager';
 import NewsFeed from './NewsFeed';
 import Recommendations from './Recommendations';
 import Feed from './Feed';
+import MobileActionMenu from './MobileActionMenu';
 
 type Tab = 'tasks' | 'news' | 'recommendations' | 'feed';
 
-export default function Dashboard() {
+function DashboardContent() {
   const [activeTab, setActiveTab] = useState<Tab>('feed');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openTaskModal, setOpenTaskModal] = useState(false);
+  const [openRecommendationModal, setOpenRecommendationModal] = useState(false);
+  const [openNewsSourceModal, setOpenNewsSourceModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { refreshFeed } = useFeedRefresh();
+
+  const handleAddTask = () => {
+    setOpenTaskModal(true);
+    setMobileMenuOpen(false);
+  };
+
+  const handleAddRecommendation = () => {
+    setOpenRecommendationModal(true);
+    setMobileMenuOpen(false);
+  };
+
+  const handleAddNewsSource = () => {
+    setOpenNewsSourceModal(true);
+    setMobileMenuOpen(false);
+  };
+
+  const handleRefreshFeed = () => {
+    refreshFeed();
+    setMobileMenuOpen(false);
+  };
 
   return (
-    <FeedRefreshProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
-      {/* Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-lg">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
+      {/* Sidebar - Hidden on mobile */}
+      <div className="hidden md:block fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-lg">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -81,13 +106,56 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="ml-64 p-8">
-        {activeTab === 'tasks' && <TaskManager />}
-        {activeTab === 'news' && <NewsFeed />}
-        {activeTab === 'recommendations' && <Recommendations />}
-        {activeTab === 'feed' && <Feed />}
+      <div className="ml-0 md:ml-64 p-4 md:p-8">
+        {/* Mobile: Always show Feed */}
+        <div className="block md:hidden">
+          <Feed />
+        </div>
+        
+        {/* Always render components for modals - hide main content on mobile with hideContent prop */}
+        <div className="block md:hidden">
+          <TaskManager openCreateModal={openTaskModal} onModalClose={() => setOpenTaskModal(false)} hideContent={true} />
+          <NewsFeed openCreateSourceModal={openNewsSourceModal} onModalClose={() => setOpenNewsSourceModal(false)} hideContent={true} />
+          <Recommendations openCreateModal={openRecommendationModal} onModalClose={() => setOpenRecommendationModal(false)} hideContent={true} />
+        </div>
+        
+        {/* Desktop: Show based on activeTab */}
+        <div className="hidden md:block">
+          {activeTab === 'tasks' && <TaskManager openCreateModal={openTaskModal} onModalClose={() => setOpenTaskModal(false)} />}
+          {activeTab === 'news' && <NewsFeed openCreateSourceModal={openNewsSourceModal} onModalClose={() => setOpenNewsSourceModal(false)} />}
+          {activeTab === 'recommendations' && <Recommendations openCreateModal={openRecommendationModal} onModalClose={() => setOpenRecommendationModal(false)} />}
+          {activeTab === 'feed' && <Feed />}
+        </div>
       </div>
+
+      {/* Mobile FAB Button */}
+      <button
+        onClick={() => setMobileMenuOpen(true)}
+        className="fixed bottom-4 right-4 md:hidden w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-200 z-30"
+        aria-label="Open menu"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* Mobile Action Menu */}
+      <MobileActionMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        onAddTask={handleAddTask}
+        onAddRecommendation={handleAddRecommendation}
+        onAddNewsSource={handleAddNewsSource}
+        onRefreshFeed={handleRefreshFeed}
+      />
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <FeedRefreshProvider>
+      <DashboardContent />
     </FeedRefreshProvider>
   );
 }

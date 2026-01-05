@@ -24,11 +24,28 @@ interface NewsSource {
   createdAt?: string;
 }
 
-export default function NewsFeed() {
+interface NewsFeedProps {
+  openCreateSourceModal?: boolean;
+  onModalClose?: () => void;
+  hideContent?: boolean;
+}
+
+export default function NewsFeed({ openCreateSourceModal = false, onModalClose, hideContent = false }: NewsFeedProps = {}) {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [sources, setSources] = useState<NewsSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSourceModal, setShowSourceModal] = useState(false);
+
+  // Handle external modal trigger
+  useEffect(() => {
+    if (openCreateSourceModal) {
+      setShowSourceModal(true);
+      // Reset the trigger after opening
+      if (onModalClose) {
+        setTimeout(() => onModalClose(), 100);
+      }
+    }
+  }, [openCreateSourceModal, onModalClose]);
   const [showManageFeedsModal, setShowManageFeedsModal] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<NewsSource | null>(null);
@@ -95,6 +112,7 @@ export default function NewsFeed() {
       await newsApi.createSource(sourceForm);
       setShowSourceModal(false);
       setSourceForm({ name: '', url: '', type: 'rss' });
+      if (onModalClose) onModalClose();
       loadSources();
       loadNews();
     } catch (error) {
@@ -158,24 +176,26 @@ export default function NewsFeed() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100 font-semibold">News Feed</h2>
-        <div className="flex space-x-3">
+      {!hideContent && (
+        <>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-slate-100 font-semibold">News Feed</h2>
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <button
             onClick={handleRefresh}
-            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
           >
             Refresh News
           </button>
           <button
             onClick={handleOpenManageFeeds}
-            className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
           >
             Manage Feeds
           </button>
           <button
             onClick={() => setShowSourceModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg transition-all duration-200"
+            className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
           >
             + Add Source
           </button>
@@ -183,7 +203,7 @@ export default function NewsFeed() {
       </div>
 
       {/* Filters */}
-      <div className="flex space-x-2 mb-6 flex-wrap">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setFilter('all')}
           className={`px-4 py-2 rounded-lg transition-all duration-200 ${
@@ -229,24 +249,24 @@ export default function NewsFeed() {
           filteredNews.map((item) => (
             <div
               key={item.id}
-              className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 ${
+              className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 ${
                 !item.read ? 'border-l-4 border-blue-500' : ''
               }`}
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="text-xl font-semibold text-gray-800 dark:text-slate-100">{item.title}</h3>
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-slate-100 flex-1 min-w-0">{item.title}</h3>
                     {!item.read && (
-                      <span className="bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 text-xs px-2 py-1 rounded">
+                      <span className="bg-blue-500/20 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 text-xs px-2 py-1 rounded whitespace-nowrap">
                         New
                       </span>
                     )}
                   </div>
                   {item.description && (
-                    <p className="text-gray-600 dark:text-slate-300 mb-3">{item.description}</p>
+                    <p className="text-gray-600 dark:text-slate-300 mb-3 break-words">{item.description}</p>
                   )}
-                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-slate-400">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm text-gray-500 dark:text-slate-400">
                     <span>{item.source.name}</span>
                     {item.publishedAt && (
                       <span>{new Date(item.publishedAt).toLocaleDateString()}</span>
@@ -265,7 +285,7 @@ export default function NewsFeed() {
                 </div>
                 <button
                   onClick={() => handleMarkRead(item.id, !item.read)}
-                  className={`ml-4 px-3 py-1 rounded-lg text-sm transition-all duration-200 ${
+                  className={`md:ml-4 px-3 py-2 rounded-lg text-sm transition-all duration-200 min-h-[44px] w-full md:w-auto ${
                     item.read
                       ? 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                       : 'bg-blue-500/20 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-500/30 dark:hover:bg-blue-500/30'
@@ -278,11 +298,13 @@ export default function NewsFeed() {
           ))
         )}
       </div>
+        </>
+      )}
 
       {/* Manage Feeds Modal */}
       {showManageFeedsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-4xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 w-full max-w-[95vw] md:max-w-4xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Manage News Feeds</h3>
               <button
@@ -367,8 +389,8 @@ export default function NewsFeed() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirmModal && sourceToDelete && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 w-full max-w-[95vw] md:max-w-md shadow-2xl">
             {deleteSuccess ? (
               <div className="text-center">
                 <div className="mb-4">
@@ -445,8 +467,8 @@ export default function NewsFeed() {
 
       {/* Source Modal */}
       {showSourceModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 w-full max-w-[95vw] md:max-w-md shadow-2xl">
             <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-slate-100">Add News Source</h3>
             <form onSubmit={handleAddSource}>
               <div className="mb-4">
@@ -496,6 +518,7 @@ export default function NewsFeed() {
                   onClick={() => {
                     setShowSourceModal(false);
                     setSourceForm({ name: '', url: '', type: 'rss' });
+                    if (onModalClose) onModalClose();
                   }}
                   className="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 transition-all duration-200"
                 >

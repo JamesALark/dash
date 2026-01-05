@@ -12,7 +12,13 @@ interface Task {
   updatedAt: string;
 }
 
-export default function TaskManager() {
+interface TaskManagerProps {
+  openCreateModal?: boolean;
+  onModalClose?: () => void;
+  hideContent?: boolean;
+}
+
+export default function TaskManager({ openCreateModal = false, onModalClose, hideContent = false }: TaskManagerProps = {}) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -25,6 +31,20 @@ export default function TaskManager() {
     dueDate: '',
   });
   const [filter, setFilter] = useState<string>('all');
+
+  // Handle external modal trigger
+  useEffect(() => {
+    if (openCreateModal) {
+      setEditingTask(null);
+      setFormData({ title: '', description: '', status: 'todo', priority: 'medium', dueDate: '' });
+      setShowModal(true);
+      // Reset the trigger after opening
+      if (onModalClose) {
+        // Small delay to ensure modal opens first
+        setTimeout(() => onModalClose(), 100);
+      }
+    }
+  }, [openCreateModal, onModalClose]);
 
   useEffect(() => {
     loadTasks();
@@ -52,6 +72,7 @@ export default function TaskManager() {
       setShowModal(false);
       setEditingTask(null);
       setFormData({ title: '', description: '', status: 'todo', priority: 'medium', dueDate: '' });
+      if (onModalClose) onModalClose();
       loadTasks();
     } catch (error) {
       console.error('Failed to save task:', error);
@@ -108,22 +129,24 @@ export default function TaskManager() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100 font-semibold">Tasks</h2>
+      {!hideContent && (
+        <>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-slate-100 font-semibold">Tasks</h2>
         <button
           onClick={() => {
             setEditingTask(null);
             setFormData({ title: '', description: '', status: 'todo', priority: 'medium', dueDate: '' });
             setShowModal(true);
           }}
-          className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg transition-all duration-200"
+          className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px]"
         >
           + Add Task
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex space-x-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {['all', 'todo', 'in-progress', 'done'].map((status) => (
           <button
             key={status}
@@ -149,15 +172,15 @@ export default function TaskManager() {
           filteredTasks.map((task) => (
             <div
               key={task.id}
-              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200"
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200"
             >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-slate-100 mb-2">{task.title}</h3>
+              <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-slate-100 mb-2">{task.title}</h3>
                   {task.description && (
-                    <p className="text-gray-600 dark:text-slate-300 mb-3">{task.description}</p>
+                    <p className="text-gray-600 dark:text-slate-300 mb-3 break-words">{task.description}</p>
                   )}
-                  <div className="flex items-center space-x-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-4 text-sm">
                     <span className={`px-2 py-1 rounded ${getStatusColor(task.status)}`}>
                       {task.status.replace('-', ' ')}
                     </span>
@@ -171,16 +194,16 @@ export default function TaskManager() {
                     )}
                   </div>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                   <button
                     onClick={() => handleEdit(task)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-3 py-1 transition-colors duration-200"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 px-3 py-2 transition-colors duration-200 min-h-[44px] rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(task.id)}
-                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 px-3 py-1 transition-colors duration-200"
+                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 px-3 py-2 transition-colors duration-200 min-h-[44px] rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     Delete
                   </button>
@@ -190,11 +213,13 @@ export default function TaskManager() {
           ))
         )}
       </div>
+        </>
+      )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 md:p-6 w-full max-w-[95vw] md:max-w-md shadow-2xl">
             <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-slate-100">
               {editingTask ? 'Edit Task' : 'New Task'}
             </h3>
@@ -267,6 +292,7 @@ export default function TaskManager() {
                   onClick={() => {
                     setShowModal(false);
                     setEditingTask(null);
+                    if (onModalClose) onModalClose();
                   }}
                   className="px-4 py-2 text-gray-700 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 transition-all duration-200"
                 >
